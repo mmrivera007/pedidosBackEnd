@@ -35,6 +35,8 @@ public class Detalle implements Serializable {
     @Column(unique=true, nullable=false, precision=10)
     private Integer id;
     
+    private Integer cantidad;
+    
     @ManyToOne(fetch = FetchType.LAZY, optional=false)
     @JoinColumn(name="id_articulo", nullable=false)
     private Articulo articulo;

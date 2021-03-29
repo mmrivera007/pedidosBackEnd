@@ -23,6 +23,8 @@ public class DetalleServiceImpl implements DetalleService{
 	
 	@Autowired
 	private DetalleDAO detalleDAO;
+	@Autowired
+	private ArticuloServiceImpl articuloService;
 		
 	@Transactional
 	public Integer guardarDetalle(Detalle detalle) throws Exception {
@@ -33,7 +35,16 @@ public class DetalleServiceImpl implements DetalleService{
 		if(detalle.getId() != null && detalle.getId().equals(-1)) {
 			detalle.setId(null);
 		}
-		return detalleDAO.save(detalle).getId();				
+		
+		Articulo art = articuloService.obtenerArticuloById(detalle.getArticulo().getId());
+		if(art.getStock() < detalle.getCantidad()) {
+			throw new RuntimeException("No hay stock para el articulo '" + art.getNombre() + "', stock:" + art.getStock());
+		}else {
+			art.setStock(art.getStock() - detalle.getCantidad());
+			articuloService.guardarArticulo(art);
+		}		
+		
+		return detalleDAO.save(detalle).getId();
 	}
 
 	@Transactional
@@ -42,6 +53,7 @@ public class DetalleServiceImpl implements DetalleService{
 		if(id == null) {
 			throw new Exception ("Se requiere el objeto para eliminar");
 		}
+		
 		detalleDAO.deleteById(id);
 	}
 
@@ -82,6 +94,7 @@ public class DetalleServiceImpl implements DetalleService{
 	public void guardarDetalles(Integer idOrden, List<Detalle> detalles) throws Exception {
 		log.info("guardarDetalles servicio..." + idOrden);
 		this. verificaDetalleEliminar(idOrden, detalles);
+		
 		if(!detalles.isEmpty()) {
 			log.info("Actualiza:"+detalles);
 			//Guarda/actualiza los detalle enviados
@@ -121,6 +134,10 @@ public class DetalleServiceImpl implements DetalleService{
 			if(!ObjectUtils.isEmpty(detEliminar)) {
 				detEliminar.forEach(det -> {
 					try {
+						Articulo art = articuloService.obtenerArticuloById(det.getArticulo().getId());		
+						art.setStock(art.getStock() + det.getCantidad());
+						articuloService.guardarArticulo(art);
+						
 						this.eliminarDetalle(det.getId());
 					} catch (Exception e) {
 						throw new RuntimeException(e);

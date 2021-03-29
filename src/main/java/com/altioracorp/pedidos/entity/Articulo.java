@@ -47,6 +47,8 @@ public class Articulo implements Serializable {
     @Column(nullable=false, precision=17, scale=17)
     private Double precio;
     
+    private Integer stock;
+    
     @JsonIgnore
     @OneToMany(fetch = FetchType.LAZY, mappedBy="articulo")
     private List<Detalle> detalle;

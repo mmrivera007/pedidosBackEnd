@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
+import com.altioracorp.pedidos.entity.Articulo;
 import com.altioracorp.pedidos.entity.Cliente;
 import com.altioracorp.pedidos.entity.Detalle;
 import com.altioracorp.pedidos.entity.Orden;
@@ -24,6 +25,8 @@ public class OrdenServiceImpl implements OrdenService{
 	private OrdenDAO ordenDAO;
 	@Autowired
 	private DetalleServiceImpl detalleService;
+	@Autowired
+	private ArticuloServiceImpl articuloService;
 		
 	@Transactional
 	public Integer guardarOrden(Orden orden) throws Exception {
@@ -31,7 +34,9 @@ public class OrdenServiceImpl implements OrdenService{
 		if(orden == null || orden.getCliente() == null || orden.getFecha() == null) {
 			throw new Exception ("Se requiere el objeto con los valores obligatorios para guardar");
 		}
-		
+		if(orden.getId() != null && orden.getId().equals(-1)) {
+			orden.setId(null);
+		}
 		return ordenDAO.save(orden).getId();				
 	}
 
@@ -46,6 +51,10 @@ public class OrdenServiceImpl implements OrdenService{
 		if(!ObjectUtils.isEmpty(detalles)) {
 			detalles.forEach(detalle ->{
 				try {
+					Articulo art = articuloService.obtenerArticuloById(detalle.getArticulo().getId());		
+					art.setStock(art.getStock() + detalle.getCantidad());
+					articuloService.guardarArticulo(art);
+					
 					detalleService.eliminarDetalle(detalle.getId());
 				} catch (Exception e) {
 					throw new RuntimeException(e);
